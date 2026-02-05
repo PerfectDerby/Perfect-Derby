@@ -1,0 +1,1041 @@
+﻿import { gameState } from './gameState.js';
+
+// Sound Manager
+class SoundManager {
+    constructor() {
+        this.audioContext = null;
+        this.initialized = false;
+        this.themeOscillators = [];
+        this.themeTimer = null;
+        this.themePlaying = false;
+        this.noiseBuffer = null;
+        this.masterGain = null;
+    }
+
+    init() {
+        if (this.initialized) return Promise.resolve();
+
+        // Add listeners for iOS auto-resume
+        // Add listeners for iOS auto-resume
+        document.addEventListener('visibilitychange', () => this._handleVisibilityChange());
+        window.addEventListener('pageshow', () => this._handleVisibilityChange());
+        document.addEventListener('touchstart', () => this._handleInteraction());
+        document.addEventListener('click', () => this._handleInteraction());
+
+        return new Promise((resolve) => {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.audioContext.createGain();
+                this.masterGain.connect(this.audioContext.destination);
+
+                // Resume immediately
+                this.audioContext.resume().then(() => {
+                    // Double check state, sometimes it needs a moment
+                    if (this.audioContext.state === 'running') {
+                        this._finishInit();
+                        resolve();
+                    } else {
+                        // Poll for running state if not immediate
+                        let attempts = 0;
+                        const checkState = setInterval(() => {
+                            attempts++;
+                            if (this.audioContext.state === 'running' || attempts > 50) { // Stop after ~500ms
+                                clearInterval(checkState);
+                                this._finishInit();
+                                resolve();
+                            }
+                        }, 10);
+                    }
+                });
+
+            } catch (e) {
+                console.warn('Web Audio API not supported');
+                resolve(); // Resolve anyway to let game start
+            }
+        });
+    }
+
+    _handleVisibilityChange() {
+        if (document.hidden) return;
+
+        this._checkAndResume();
+    }
+
+    _handleInteraction() {
+        this._checkAndResume();
+    }
+
+    _checkAndResume() {
+        if (this.audioContext && (this.audioContext.state === 'suspended' || this.audioContext.state === 'interrupted')) {
+            this.audioContext.resume().catch(() => { });
+        }
+    }
+
+    _finishInit() {
+        if (this.initialized) return;
+
+        // Warm up with a silent buffer
+        const buffer = this.audioContext.createBuffer(1, 1, 22050);
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.audioContext.destination);
+        source.start(0);
+
+        // Keep-alive oscillator: Plays silent sound to keep audio thread active
+        const keepAliveOsc = this.audioContext.createOscillator();
+        const keepAliveGain = this.audioContext.createGain();
+        keepAliveOsc.type = 'sine';
+        keepAliveOsc.frequency.value = 1; // 1Hz (inaudible)
+        keepAliveGain.gain.value = 0.0001; // Nearly silent
+        keepAliveOsc.connect(keepAliveGain);
+        keepAliveGain.connect(this.audioContext.destination);
+        keepAliveOsc.start(0);
+
+        this.initialized = true;
+    }
+
+    playSwing() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+
+    playPause(isPausing) {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+
+        if (isPausing) {
+            // Stepped Descending tone for Pause (High -> Low)
+            osc.frequency.setValueAtTime(660, now);
+            osc.frequency.setValueAtTime(440, now + 0.1);
+        } else {
+            // Stepped Ascending tone for Unpause (Low -> High)
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(660, now + 0.1);
+        }
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+
+    playHit() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.15);
+    }
+
+    playPerfectHit() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Major Triad Arpeggio (C Major: C5, E5, G5, C6)
+        // 8-bit style: Square waves, short duration
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        const duration = 0.1;
+        const spacing = 0.08;
+
+        notes.forEach((freq, index) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startTime = now + (index * spacing);
+
+            osc.type = 'square';
+            osc.frequency.value = freq;
+
+            gain.gain.setValueAtTime(0.2, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        });
+
+        // Add a sparkly high finish
+        const sparkle = ctx.createOscillator();
+        const sparkleGain = ctx.createGain();
+        const sparkleStart = now + (notes.length * spacing);
+
+        sparkle.type = 'triangle';
+        sparkle.frequency.setValueAtTime(1200, sparkleStart);
+        sparkle.frequency.linearRampToValueAtTime(2000, sparkleStart + 0.3);
+
+        sparkleGain.gain.setValueAtTime(0.1, sparkleStart);
+        sparkleGain.gain.linearRampToValueAtTime(0.01, sparkleStart + 0.3);
+
+        sparkle.connect(sparkleGain);
+        sparkleGain.connect(this.masterGain);
+
+        sparkle.start(sparkleStart);
+        sparkle.stop(sparkleStart + 0.3);
+    }
+
+    playFoul() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        // Unrewarding sound: Low saw/square wave sliding down
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+
+    playStrike() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        // Harsh unrewarding buzz
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.linearRampToValueAtTime(80, now + 0.2); // Slight pitch drop
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+
+    playStrikesCleared() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Celestial Level Up" Chord
+        // Notes: F4, A4, C5, E5 (F Major 7) - dreamy and resolving
+        const notes = [349.23, 440.00, 523.25, 659.25];
+        const duration = 0.8;
+
+        // 1. Play Chord
+        notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            // Mix of Triangle (warm) and Square (retro)
+            osc.type = i % 2 === 0 ? 'triangle' : 'square';
+            osc.frequency.value = freq;
+
+            // Stagger slightly for "strum" effect
+            const startTime = now + (i * 0.05);
+
+            gain.gain.setValueAtTime(0.1, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        });
+
+        // 2. Rising Sweep (The "Magic" part)
+        const sweep = ctx.createOscillator();
+        const sweepGain = ctx.createGain();
+        sweep.type = 'sine';
+        sweep.frequency.setValueAtTime(400, now);
+        sweep.frequency.exponentialRampToValueAtTime(2000, now + 0.6); // Fast rise
+
+        sweepGain.gain.setValueAtTime(0.05, now);
+        sweepGain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+
+        sweep.connect(sweepGain);
+        sweepGain.connect(this.masterGain);
+
+        sweep.start(now);
+        sweep.stop(now + 0.6);
+    }
+
+    playLevelUp() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Ascending "Level Up" sound (Power-up style)
+        const notes = [440, 554, 659, 880, 1108, 1318]; // A Major arpeggio
+        const duration = 0.1;
+        const spacing = 0.08;
+
+        notes.forEach((freq, index) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startTime = now + (index * spacing);
+
+            osc.type = 'square';
+            osc.frequency.value = freq;
+
+            gain.gain.setValueAtTime(0.1, startTime);
+            gain.gain.linearRampToValueAtTime(0.01, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        });
+    }
+
+    playPitch() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.08);
+    }
+
+    playCurveCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Wobbly rising tone for Curveball
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const vibrato = ctx.createOscillator();
+        const vibratoGain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.linearRampToValueAtTime(400, now + 0.8);
+
+        // Vibrato effect
+        vibrato.frequency.value = 10; // 10Hz wobble
+        vibratoGain.gain.value = 20; // Depth of wobble
+        vibrato.connect(vibratoGain);
+        vibratoGain.connect(osc.frequency);
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        vibrato.start(now);
+        osc.stop(now + 0.8);
+        vibrato.stop(now + 0.8);
+    }
+
+    playChangeCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Lower, slower rising tone for Changeup
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.linearRampToValueAtTime(200, now + 0.8);
+
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.8);
+    }
+
+    playSuperCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // High-pitched screamer for Super Fastball
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.8); // Screaming high
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.8);
+    }
+
+    playSplitterCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Aggressive Chopper" (Sawtooth + Accelerating Square LFO)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+
+        // Carrier: Gritty Sawtooth dropping deep
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.8);
+
+        // LFO: Square wave chopping the frequency hard
+        lfo.type = 'square';
+        lfo.frequency.setValueAtTime(15, now); // Start slow chop
+        lfo.frequency.linearRampToValueAtTime(60, now + 0.8); // Speed up chop
+
+        lfoGain.gain.value = 100; // Heavy modulation depth
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        lfo.start(now);
+        osc.stop(now + 0.8);
+        lfo.stop(now + 0.8);
+    }
+
+
+    playZigZagCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Alien Warble" - Sine wave with Frequency Modulation (Zig-Zagging pitch)
+        const osc = ctx.createOscillator();
+        const mainGain = ctx.createGain();
+
+        const modulator = ctx.createOscillator();
+        const modGain = ctx.createGain();
+
+        // Carrier: Pure Sine (Softeset tone)
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(600, now + 0.8); // Slight rise
+
+        // Modulator: Square wave ("Zig Zag" shape)
+        modulator.type = 'square';
+        modulator.frequency.value = 12; // 12Hz speed (Fast wobble)
+
+        // Modulation Depth: How far frequency jumps
+        modGain.gain.value = 50; // Jumps +/- 50Hz
+
+        // FM Synthesis: LFO -> ModGain -> Carrier Frequency
+        modulator.connect(modGain);
+        modGain.connect(osc.frequency);
+
+        // Amplitude Envelope (Volume)
+        mainGain.gain.setValueAtTime(0.15, now); // Increased to match standard (Sine needs more gain than Square)
+        mainGain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+
+        osc.connect(mainGain);
+        mainGain.connect(this.masterGain);
+
+        osc.start(now);
+        modulator.start(now);
+        osc.stop(now + 0.8);
+        modulator.stop(now + 0.8);
+    }
+
+    playStopCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Tension Rise" - Sawtooth rising slowly
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 1.0); // Slow rise
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 1.0);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 1.0);
+    }
+
+    playTheme() {
+        if (gameState.settings?.muteMusic) return;
+        if (!this.initialized || this.themePlaying) return;
+        this.themePlaying = true;
+        const ctx = this.audioContext;
+
+        // "Take Me Out to the Ball Game" - Simple 8-bit melody
+        // Notes: C4, C5, A4, G4, E4, G4, D4
+        const melody = [
+            { note: 261.63, dur: 0.4 }, // Take
+            { note: 523.25, dur: 0.4 }, // Me
+            { note: 440.00, dur: 0.4 }, // Out
+            { note: 392.00, dur: 0.4 }, // To
+            { note: 329.63, dur: 0.4 }, // The
+            { note: 392.00, dur: 0.4 }, // Ball
+            { note: 293.66, dur: 1.2 }, // Game
+            { note: 0, dur: 0.4 }       // Rest
+        ];
+
+        let noteIndex = 0;
+        let nextNoteTime = ctx.currentTime;
+
+        const playNextNote = () => {
+            if (!this.themePlaying) return;
+
+            const { note, dur } = melody[noteIndex];
+
+            if (note > 0) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'square'; // 8-bit sound
+                osc.frequency.setValueAtTime(note, nextNoteTime);
+
+                gain.gain.setValueAtTime(0.05, nextNoteTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, nextNoteTime + dur - 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start(nextNoteTime);
+                osc.stop(nextNoteTime + dur);
+            }
+
+            nextNoteTime += dur;
+            noteIndex = (noteIndex + 1) % melody.length;
+
+            // Schedule next check slightly before the note ends to keep timing tight
+            // but we use AudioContext time for the actual audio scheduling so it stays in sync
+            const delay = (nextNoteTime - ctx.currentTime) * 1000;
+            this.themeTimer = setTimeout(playNextNote, Math.max(0, delay - 20));
+        };
+
+        playNextNote();
+    }
+
+    stopTheme() {
+        this.themePlaying = false;
+        if (this.themeTimer) {
+            clearTimeout(this.themeTimer);
+            this.themeTimer = null;
+        }
+    }
+
+    playEvilLaugh() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Ha-Ha-Ha" effect
+        // 3 distinct bursts of descending tone
+        [0, 0.2, 0.4].forEach((startTime, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sawtooth';
+            // Descending pitch for each "Ha"
+            osc.frequency.setValueAtTime(400 - (i * 50), now + startTime);
+            osc.frequency.linearRampToValueAtTime(300 - (i * 50), now + startTime + 0.15);
+
+            gain.gain.setValueAtTime(0.2, now + startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + startTime + 0.15);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(now + startTime);
+            osc.stop(now + startTime + 0.15);
+        });
+    }
+
+    playGhostCharge() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Spooky phasing sound
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'triangle';
+
+        // Detuned frequencies for phasing effect
+        osc1.frequency.setValueAtTime(300, now);
+        osc1.frequency.linearRampToValueAtTime(600, now + 0.8);
+        osc2.frequency.setValueAtTime(305, now); // Slightly detuned
+        osc2.frequency.linearRampToValueAtTime(605, now + 0.8);
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.8);
+        osc2.stop(now + 0.8);
+    }
+
+    playBatBreak() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Wood Snap" - Sawtooth burst + Noise
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+
+        // Noise Burst (Simulated with random modulation)
+        const noiseOsc = ctx.createOscillator();
+        const noiseGain = ctx.createGain();
+        noiseOsc.type = 'square';
+        noiseOsc.frequency.value = 1000; // High freq "crack"
+        noiseGain.gain.setValueAtTime(0.3, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+        noiseOsc.connect(noiseGain);
+        noiseGain.connect(this.masterGain);
+        noiseOsc.start(now);
+        noiseOsc.stop(now + 0.2);
+    }
+
+    _createNoiseBuffer() {
+        if (this.noiseBuffer) return;
+        const bufferSize = this.audioContext.sampleRate * 2; // 2 seconds of noise
+        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        this.noiseBuffer = buffer;
+    }
+
+
+    playFirework() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        if (!this.noiseBuffer) this._createNoiseBuffer();
+
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // 1. 8-Bit Square Wave Drop (Higher pitch "Winning" sound)
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, now); // Start high!
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.4); // Drop, but stay audible
+
+        oscGain.gain.setValueAtTime(0.3, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        osc.connect(oscGain);
+        oscGain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.4);
+
+        // 2. Noise Burst (Brighter crunch)
+        const noiseSource = ctx.createBufferSource();
+        noiseSource.buffer = this.noiseBuffer;
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.4, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        // Brighter filter
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 5000; // Let more highs through
+
+        noiseSource.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.masterGain);
+
+        noiseSource.start(now);
+        noiseSource.stop(now + 0.3);
+    }
+
+    playSettingsOpen() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+        // Descending blip (Mid -> Low) - Matches Pause "Power Down"
+        osc.frequency.setValueAtTime(500, now);
+        osc.frequency.linearRampToValueAtTime(300, now + 0.1);
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+
+    playSettingsClose() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+        // Ascending blip (Low -> Mid) - Matches Unpause "Power Up"
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(500, now + 0.1);
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+
+    playSettingsToggle() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+        // Crisp high click
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.05);
+    }
+    playUnlockablesOpen() {
+        if (gameState.settings?.muteSound) return;
+        this.playSettingsOpen(); // Reuse open sound
+    }
+
+    playUnlockablesClose() {
+        if (gameState.settings?.muteSound) return;
+        this.playSettingsClose(); // Reuse close sound
+    }
+
+    _playBopSound(now, volume = 0.1) {
+        const ctx = this.audioContext;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        // Add small lookahead to avoid main thread jank
+        const startTime = now;
+
+        osc.type = 'sine';
+        // Gentle "bop"
+        osc.frequency.setValueAtTime(400, startTime);
+        osc.frequency.exponentialRampToValueAtTime(300, startTime + 0.3);
+
+        gain.gain.setValueAtTime(volume, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.35);
+    }
+
+    playItemAlreadyEquipped() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+
+        const ctx = this.audioContext;
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+        this._playBopSound(ctx.currentTime, 0.1);
+    }
+
+    playEquip() {
+        if (gameState.settings?.muteSound) return;
+
+        // Try to play even if not fully "initialized" flag is set, as long as we have context
+        if (!this.audioContext && !this.initialized) return;
+
+        const ctx = this.audioContext;
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        if (!ctx) return;
+
+        // Boost volume significantly to match perceived loudness
+        this._playBopSound(ctx.currentTime, 0.3);
+    }
+
+    playZigZag() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Zap" effect - Aggressive Square Wave
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const mod = ctx.createOscillator();
+        const modGain = ctx.createGain();
+
+        osc.type = 'square'; // Grittier sound
+        osc.frequency.setValueAtTime(800, now); // Start higher
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.5); // Deep drop
+
+        // Extreme modulation
+        mod.type = 'sawtooth';
+        mod.frequency.value = 60; // Faster buzz
+        modGain.gain.value = 500; // Huge depth
+
+        mod.connect(modGain);
+        modGain.connect(osc.frequency);
+
+        gain.gain.setValueAtTime(0.3, now); // Louder
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.5);
+        mod.start(now);
+        mod.stop(now + 0.5);
+    }
+
+
+
+
+
+    playPurchase() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // "Cha-Ching!" + Fanfare
+        // 1. Coin Jingle (High pitched rapid arpeggio)
+        const coinNotes = [1200, 1500, 1800, 2200];
+        coinNotes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const t = now + (i * 0.05);
+
+            osc.type = 'sine'; // Pure tone
+            osc.frequency.setValueAtTime(freq, t);
+
+            gain.gain.setValueAtTime(0.1, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(t);
+            osc.stop(t + 0.1);
+        });
+
+        // 2. Major Chord Swell (Rewarding)
+        const chordNotes = [523.25, 659.25, 783.99, 1046.50]; // C Major
+        chordNotes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'triangle'; // Softer, fuller sound
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0.0, now);
+            gain.gain.linearRampToValueAtTime(0.1, now + 0.1); // Swell in
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6); // Fade out
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(now);
+            osc.stop(now + 0.6);
+        });
+
+        // 3. Sparkle Finish
+        const sparkle = ctx.createOscillator();
+        const sparkleGain = ctx.createGain();
+        sparkle.type = 'square';
+        sparkle.frequency.setValueAtTime(2000, now + 0.2);
+        sparkle.frequency.linearRampToValueAtTime(4000, now + 0.5);
+
+        sparkleGain.gain.setValueAtTime(0.05, now + 0.2);
+        sparkleGain.gain.linearRampToValueAtTime(0.0, now + 0.5);
+
+        sparkle.connect(sparkleGain);
+        sparkleGain.connect(this.masterGain);
+        sparkle.start(now + 0.2);
+        sparkle.stop(now + 0.5);
+    }
+
+    playError() {
+        if (gameState.settings?.muteSound) return;
+        if (!this.initialized) return;
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Low "Buzz" error
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.15);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.15);
+    }
+}
+
+export const soundManager = new SoundManager();
+

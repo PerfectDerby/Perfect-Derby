@@ -1,0 +1,21 @@
+{
+  "appId": "com.baseball.game",
+  "appName": "Baseball Game",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#000000",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK"
+    },
+    "Keyboard": {
+      "resize": "body"
+    }
+  }
+}
