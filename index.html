@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="dark">
+    <title>Perfect Derby</title>
+    <link rel="icon" type="image/png" href="./assets/favicon-DSavRmU1.png?v=3">
+
+    <!-- FAILSAFE: Global Error Handler for Loading Crashes -->
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            // Only act if the game is still strictly "loading" (overlay visible)
+            var overlay = document.getElementById('global-loading-overlay');
+            if (overlay && overlay.style.display !== 'none') {
+                console.error("Critical Load Error:", msg, error);
+
+                // Avoid duplicates
+                if (document.getElementById('failsafe-reset-btn')) return;
+
+                var btn = document.createElement('button');
+                btn.id = 'failsafe-reset-btn';
+                btn.textContent = "CRITICAL ERROR: " + msg + " (Tap to Reset)";
+                btn.style.marginTop = "20px";
+                btn.style.padding = "15px 30px";
+                btn.style.background = "#ff0000"; // Bright Red
+                btn.style.color = "white";
+                btn.style.border = "2px solid white";
+                btn.style.borderRadius = "8px";
+                btn.style.fontSize = "18px";
+                btn.style.fontWeight = "bold";
+                btn.style.cursor = "pointer";
+                btn.style.zIndex = "100000";
+                btn.style.pointerEvents = "auto";
+
+                btn.onclick = function () {
+                    // Direct Auto-Reset (No Popup)
+                    localStorage.clear();
+                    window.location.reload();
+                };
+
+                // Append to overlay (ensure it's visible)
+                overlay.appendChild(btn);
+            }
+        };
+    </script>
+
+
+    <!-- Preload Font to prevent FOUC (Flash of Unstyled Content) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" crossorigin src="./assets/index-B3Q8gMdd.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DeWgltuK.css">
+</head>
+
+<body>
+    <!-- Initial Loading Overlay (Prevents FOUC) -->
+    <!-- Z-Index 90: Above UI (20) & Canvas (1), but BELOW Start Screen (100) -->
+    <div id="global-loading-overlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,1); z-index: 90; display: block;">
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Start Screen: Moved out of UI Layer to sit ABOVE Loading Overlay (Z: 100) -->
+        <div id="start-screen">
+            <div id="start-content">
+                <div class="game-title">
+                    <div class="title-line" data-text="PERFECT">PERFECT</div>
+                    <div class="title-line" data-text="DERBY">DERBY</div>
+                </div>
+                <div class="subtitle pulse">TAP TO <span class="mobile-block">START</span></div>
+            </div>
+        </div>
+
+        <div id="ui-layer">
+            <div id="score-container">
+                <div id="coin-container">
+                    <img id="coin-icon"
+                        src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3C%2Fsvg%3E"
+                        alt="Coin">
+                    <div id="coin-display">0</div>
+                    <div id="coin-plus" style="display: none;">+0</div>
+                </div>
+                <div id="score">Score: 0</div>
+                <div id="score-plus" class="score-plus" style="display: none;">+1</div>
+            </div>
+            <div id="feedback"></div>
+            <div id="pitch-indicator"></div>
+            <div id="tutorial-overlay">
+                <div id="tutorial-text">HOLD & RELEASE<br>TO SWING</div>
+                <div id="tutorial-arrow">⬇</div>
+            </div>
+        </div>
+        <div id="tutorial-volume">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-volume-2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+        </div>
+
+        <!-- TEMP: FEEDBACK BUTTON -->
+        <div id="feedback-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-file-text">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                <path d="M10 9H8" />
+                <path d="M16 13H8" />
+                <path d="M16 17H8" />
+            </svg>
+        </div>
+
+        <!-- Settings Button -->
+        <div id="settings-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+        </div>
+
+        <!-- Unlockables Button -->
+        <div id="unlockables-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-lock-open">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+            </svg>
+        </div>
+
+        <!-- Leaderboard Button -->
+        <div id="leaderboard-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 21h8" />
+                <path d="M12 17v4" />
+                <path d="M7 4h10" />
+                <path d="M17 4v8a5 5 0 0 1-10 0V4" />
+                <path d="M5 9h2" /> <!-- Left Handle attachment -->
+                <path d="M17 9h2" /> <!-- Right Handle attachment -->
+                <!-- Wait, handles usually curve. Let's make it look good. -->
+                <path d="M5 9v2a2 2 0 0 0 2 2" />
+                <path d="M19 9v2a2 2 0 0 1-2 2" />
+            </svg>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" style="display: none;">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h2>SETTINGS</h2>
+                </div>
+
+                <div class="settings-scroll-area">
+                    <div class="settings-section">
+                        <h3>GAMEPLAY</h3>
+                        <div class="setting-row">
+                            <div
+                                style="display: flex; flex-direction: column; align-items: flex-start; flex: 1; padding-right: 2vmin;">
+                                <span>Swing on Release</span>
+                                <span style="font-size: 0.6em; color: #aaa; margin-top: 4px;">Swing when you lift
+                                    your
+                                    finger off the screen instead of tapping</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-release">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Vibration</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-vibration">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Mute Music</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-music">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Mute Sound FX</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-sound">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>ACCESSIBILITY</h3>
+                        <div class="setting-row">
+                            <span>Color Blind Mode</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-colorblind">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Reduce Flashing</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-noflash">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-footer">
+                    <button id="home-btn" class="settings-action-btn">HOME</button>
+                    <button id="restart-game" class="settings-action-btn"><u>R</u>ESTART</button>
+                    <button id="close-settings" class="settings-action-btn">CLOSE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unlockables Modal -->
+        <div id="unlockables-modal" style="display: none;">
+            <div class="unlockables-content">
+                <div class="unlockables-header">
+                    <h2>SHOP</h2>
+                </div>
+
+                <div class="unlockables-scroll-area">
+                    <div class="unlockables-section">
+                        <h3>STADIUM THEMES</h3>
+                        <div id="stadium-grid" class="unlockables-grid">
+                            <!-- Items injected via JS -->
+                        </div>
+                    </div>
+
+                    <div class="unlockables-section">
+                        <h3>CUSTOM BATS</h3>
+                        <div id="bat-grid" class="unlockables-grid">
+                            <!-- Items injected via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="unlockables-footer">
+                    <div class="coin-balance">
+                        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3C%2Fsvg%3E"
+                            alt="Coins">
+                        <span id="unlockables-coin-display">0</span>
+                    </div>
+                    <button id="close-unlockables">CLOSE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" style="display: none;">
+            <div class="confirmation-content">
+                <h2 id="confirmation-title">RETURN TO TITLE?</h2>
+                <p id="confirmation-text">Current game progress will be lost.</p>
+                <div class="confirmation-footer">
+                    <button id="confirm-cancel-btn">CANCEL</button>
+                    <button id="confirm-ok-btn">CONFIRM</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Modal -->
+        <div id="leaderboard-modal" style="display: none;">
+            <div class="leaderboard-content">
+
+                <div class="leaderboard-header">
+                    <div class="leaderboard-tabs">
+                        <button id="tab-all-time" class="tab-btn active">CLASSIC</button>
+                        <button id="tab-daily" class="tab-btn">DAILY</button>
+                    </div>
+                </div>
+
+                <div class="leaderboard-body">
+                    <div id="leaderboard-loading">Loading...</div>
+
+                    <!-- All Time List -->
+                    <div id="leaderboard-list">
+                        <!-- Rows injected via JS -->
+                    </div>
+
+                    <!-- Daily Section (Hidden by default) -->
+                    <div id="daily-section"
+                        style="display: none; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
+                        <!-- Daily Play Button -->
+                        <div class="daily-divider">TODAY'S TOP SCORES</div>
+                        <!-- Placeholder for Daily Scores -->
+                        <div id="daily-list"
+                            style="text-align: center; color: #666; margin-top: 2vmin; margin-bottom: 2vmin; min-height: 0; flex: 1; overflow-y: auto;">
+                            COMING SOON...
+                        </div>
+
+                        <!-- Daily Hero Card -->
+                        <div class="daily-hero-card">
+                            <div class="daily-header">
+                                <span class="daily-title">DAILY CHALLENGE</span>
+                                <div class="daily-date-nav">
+                                    <div id="daily-prev-btn" class="nav-arrow">&lt;</div>
+                                    <span id="daily-date" class="daily-date">--/--</span>
+                                    <div id="daily-next-btn" class="nav-arrow">&gt;</div>
+                                </div>
+                            </div>
+                            <p class="daily-desc">Survive today's chaotic pitch sequence!</p>
+
+                            <div class="daily-stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">YOUR STREAK</div>
+                                    <div id="daily-streak-container" class="stat-value">
+                                        <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='%23ff5500'%20stroke='%23ff5500'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3e%3cpath%20d='M8.5%2014.5A2.5%202.5%200%200%200%2011%2012c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054%202-6%20.5%202.5%202%204.9%204%206.5%202%201.6%203%203.5%203%205.5a7%207%200%201%201-14%200c0-1.1.2-2.2.6-3.3.3.9.9%201.8%202.9%202.8z'/%3e%3c/svg%3e" alt="Streak" class="streak-icon"
+                                            style="width: 1em; height: 1em; vertical-align: middle; margin-right: 4px;">
+                                        <span id="daily-streak-value">0</span>
+                                    </div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">ENTRY FEE</div>
+                                    <div id="daily-cost-container" class="stat-value free">
+                                        <img id="daily-cost-icon"
+                                            src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3C%2Fsvg%3E"
+                                            class="stat-icon" style="display: none;">
+                                        <span id="daily-cost-value">FREE</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="daily-challenge-btn" class="daily-play-action">
+                                START RUN
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Name Entry (Hidden by default) -->
+                    <div id="name-entry-container"
+                        style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                        <p style="text-align: center; margin-bottom: 2vmin; font-size: 0.8rem; line-height: 1.5;">
+                            ENTER YOUR INITIALS<br><span style="color: #888;">TO JOIN THE RANKS</span></p>
+                        <input type="text" id="player-name-input" maxlength="3" placeholder="AAA"
+                            style="background: #333; border: 2px solid #555; color: white; padding: 1.5vmin; font-family: 'PressStart2PLocal'; font-size: 1rem; text-align: center; width: 40%; margin-bottom: 2vmin; text-transform: uppercase;">
+                        <button id="submit-name-btn"
+                            style="background: #f1c40f; color: black; border: none; padding: 1.5vmin 3vmin; font-family: 'PressStart2PLocal'; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 0 #c2a71f;">SAVE</button>
+                    </div>
+                </div>
+
+
+
+                <div class="leaderboard-footer">
+
+
+                    <div class="personal-best-container">
+                        <span>YOUR BEST</span>
+                        <span id="personal-best-display">0</span>
+                    </div>
+                    <button id="close-leaderboard">CLOSE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Message Overlay (Sudden Death, etc.) -->
+        <div id="message-overlay">
+            <div id="message-text">SUDDEN DEATH</div>
+            <div id="message-subtext">1 STRIKE = GAME OVER</div>
+        </div>
+
+        <div id="pause-btn">
+            <div class="pause-bar"></div>
+            <div class="pause-bar"></div>
+        </div>
+        <div id="pause-overlay">PAUSED</div>
+
+        <!-- Daily Retry Modal -->
+        <div id="daily-retry-modal" style="display: none;">
+            <div class="daily-retry-content">
+                <h2>RETRY RUN?</h2>
+                <p>Beat your previous score!</p>
+
+                <div class="retry-cost-box">
+                    <span style="color: #aaa; font-size: 0.8rem;">ENTRY FEE</span>
+                    <div class="cost-value">
+                        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3C%2Fsvg%3E"
+                            alt="Coin" style="width: 1.2rem; vertical-align: middle;">
+                        <span id="retry-cost-display">20</span>
+                    </div>
+                </div>
+
+                <div class="retry-buttons">
+                    <button id="retry-cancel-btn" class="secondary-btn">CANCEL</button>
+                    <button id="retry-confirm-btn" class="primary-btn">RETRY</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security/Time Modal -->
+        <div id="security-modal" style="display: none;">
+            <div class="security-content">
+                <h2 id="security-title">SECURITY ALERT</h2>
+                <p id="security-message">
+                    Authentication Failed.
+                </p>
+                <button id="security-close-btn">OKAY</button>
+            </div>
+        </div>
+
+        <!-- Transition Overlay (Strike Out / Broken Bat) -->
+        <div id="transition-overlay" style="display: none;">
+            <div class="transition-content">
+                <div id="transition-title">STRIKE OUT</div>
+                <div id="transition-subtitle">BETTER LUCK NEXT TIME</div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+    <!-- Game Scripts (Module Entry Point) -->
+</body>
+
+</html>
