@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <!-- Base Shadow -->
+  <rect x="1" y="2" width="14" height="13" fill="#3E2723"/>
+  
+  <!-- Main Wood Body -->
+  <rect x="1" y="2" width="14" height="12" fill="#8D6E63"/>
+  
+  <!-- Planks (darker lines) -->
+  <rect x="2" y="5" width="12" height="1" fill="#5D4037"/>
+  <rect x="2" y="9" width="12" height="1" fill="#5D4037"/>
+  
+  <!-- Corners (Metal) -->
+  <rect x="1" y="2" width="3" height="3" fill="#BCAAA4"/>
+  <rect x="12" y="2" width="3" height="3" fill="#BCAAA4"/>
+  <rect x="1" y="11" width="3" height="3" fill="#BCAAA4"/>
+  <rect x="12" y="11" width="3" height="3" fill="#BCAAA4"/>
+  
+  <!-- Center Emblem (Diamond) -->
+  <rect x="6" y="6" width="4" height="4" fill="#EFEBE9"/>
+  <rect x="7" y="7" width="2" height="2" fill="#D32F2F"/>
+  
+  <!-- Highlight Top Edge -->
+  <rect x="1" y="2" width="14" height="1" fill="#D7CCC8" opacity="0.5"/>
+</svg>
