@@ -49,8 +49,8 @@
 
     <!-- Preload Font to prevent FOUC (Flash of Unstyled Content) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" crossorigin src="./assets/index-Bs3OAWWT.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-B4QQO3Um.css">
+  <script type="module" crossorigin src="./assets/index-CLnqBR15.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CdBWBhsG.css">
 </head>
 
 <body>
@@ -183,9 +183,24 @@
                             </label>
                         </div>
                         <div class="setting-row">
-                            <span>Vibration</span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+                                <span>Vibration</span>
+                                <span id="vibration-unavailable" class="feature-unavailable"
+                                    style="display: none;">feature unavailable on this device</span>
+                            </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="toggle-vibration">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row" id="fullscreen-row">
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+                                <span>Fullscreen</span>
+                                <span id="fullscreen-unavailable" class="feature-unavailable"
+                                    style="display: none;">feature unavailable on this device</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-fullscreen">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -327,7 +342,9 @@
         <!-- Confirmation Modal -->
         <div id="confirmation-modal" style="display: none;">
             <div class="confirmation-content">
-                <h2 id="confirmation-title">RETURN TO TITLE?</h2>
+                <div class="confirmation-header">
+                    <h2 id="confirmation-title">RETURN TO TITLE?</h2>
+                </div>
                 <p id="confirmation-text">Current game progress will be lost.</p>
                 <div class="confirmation-footer">
                     <button id="confirm-cancel-btn">CANCEL</button>
