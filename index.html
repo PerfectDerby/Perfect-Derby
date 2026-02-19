@@ -49,8 +49,8 @@
 
     <!-- Preload Font to prevent FOUC (Flash of Unstyled Content) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" crossorigin src="./assets/index-DsYgP1aO.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-B1VSiY2l.css">
+  <script type="module" crossorigin src="./assets/index-VSoC5ZmW.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-B4QQO3Um.css">
 </head>
 
 <body>
@@ -305,6 +305,21 @@
                 <div class="crate-reveal-actions" id="crate-reveal-actions" style="display: none;">
                     <button id="crate-equip-btn" class="crate-action-btn">EQUIP</button>
                     <button id="crate-close-btn" class="crate-action-btn secondary">CLOSE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crate Odds Modal -->
+        <div id="crate-odds-modal" style="display: none;">
+            <div class="odds-content">
+                <div class="odds-header">
+                    <h2 id="odds-title">CRATE ODDS</h2>
+                </div>
+                <div id="odds-list" class="odds-list">
+                    <!-- Probability bars injected via JS -->
+                </div>
+                <div class="odds-footer">
+                    <button id="close-odds" class="odds-action-btn">CLOSE</button>
                 </div>
             </div>
         </div>
