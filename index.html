@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="color-scheme" content="dark">
     <title>Perfect Derby</title>
     <link rel="icon" type="image/png" href="./assets/favicon-cwdygk4y.png?v=3">
@@ -49,11 +49,13 @@
 
     <!-- Preload Font to prevent FOUC (Flash of Unstyled Content) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" crossorigin src="./assets/index-N9GK_Gkw.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-yuoQ_pmn.css">
+  <script type="module" crossorigin src="./assets/index-DCoRsN-h.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-IPoZ4AyA.css">
 </head>
 
 <body>
+    <!-- [NEW] Hidden detector to read physical Safe Area heights in JS -->
+    <div id="notch-detector" style="height: env(safe-area-inset-top, 0px); width: env(safe-area-inset-bottom, 0px); position: absolute; visibility: hidden; pointer-events: none;"></div>
     <!-- Initial Loading Overlay (Prevents FOUC) -->
     <!-- Z-Index 90: Above UI (20) & Canvas (1), but BELOW Start Screen (100) -->
     <div id="global-loading-overlay"
@@ -119,12 +121,13 @@
                 <span class="btn-label">RANKS</span>
             </div>
 
-            <!-- FEEDBACK BUTTON (Center) -->
-            <div id="feedback-btn">
+            <!-- DAILY BUTTON (Center) -->
+            <div id="daily-btn">
                 <div class="btn-icon-wrapper">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
+                    <div id="daily-badge" class="btn-badge" style="display: none; background-color: #ff0044; width: 1.5vmin; height: 1.5vmin; border-radius: 50%; min-width: 0; right: 0; top: 0; border: 0.2vmin solid white;"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                 </div>
-                <span class="btn-label">FEEDBACK</span>
+                <span class="btn-label">DAILY</span>
             </div>
             <div id="challenges-btn">
                 <div class="btn-icon-wrapper">
@@ -137,8 +140,21 @@
             <!-- Settings Button -->
             <div id="settings-btn">
                 <div class="btn-icon-wrapper">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
+                    <div id="settings-badge" class="btn-badge" style="display: none; background-color: #ff0044; width: 1.5vmin; height: 1.5vmin; border-radius: 50%; min-width: 0; right: 0; top: 0; border: 0.2vmin solid white;"></div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <defs>
+                            <linearGradient id="rainbow-gear" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff0000" />
+                                <stop offset="14%" stop-color="#ff7f00" />
+                                <stop offset="28%" stop-color="#ffff00" />
+                                <stop offset="42%" stop-color="#00ff00" />
+                                <stop offset="57%" stop-color="#0000ff" />
+                                <stop offset="71%" stop-color="#4b0082" />
+                                <stop offset="85%" stop-color="#9400d3" />
+                                <stop offset="100%" stop-color="#ff0000" />
+                                <animateTransform id="gear-rainbow-anim" attributeName="gradientTransform" type="rotate" from="0 0.5 0.5" to="360 0.5 0.5" dur="10s" repeatCount="indefinite" />
+                            </linearGradient>
+                        </defs>
                         <circle cx="12" cy="12" r="3"></circle>
                         <path
                             d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
@@ -220,11 +236,34 @@
                             </label>
                         </div>
                         <div class="setting-row">
+                            <span>Lefty Mode</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-lefty">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
                             <span>Reduce Flashing</span>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="toggle-noflash">
                                 <span class="slider"></span>
                             </label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Battery Saver</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-performance">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-section rainbow-border">
+                        <h3 style="color: #FFD700; text-shadow: 0.2vmin 0.2vmin 0 #000;">DEVELOPMENT</h3>
+                        <div class="setting-row" style="justify-content: center; padding: 1.5vmin 0;">
+                            <button id="feedback-btn" class="settings-action-btn" style="width: 100%; margin: 0; display: flex; align-items: center; justify-content: center; gap: 1.2vmin; font-size: 2.2vmin; padding: 2.2vmin 3vmin;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="3.2vmin" height="3.2vmin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text" style="display: inline-block; vertical-align: middle;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
+                                LEAVE FEEDBACK
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -283,11 +322,21 @@
                 </div>
 
                 <div class="unlockables-footer">
-                    <div class="coin-balance">
+                    <div style="display: flex; gap: 2vmin;">
+                        <div class="coin-balance">
+
                         <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3C%2Fsvg%3E"
                             alt="Coins" draggable="false"
                             style="user-select: none; -webkit-user-drag: none; pointer-events: none;">
                         <span id="unlockables-coin-display">0</span>
+                    
+                        </div>
+                        <div class="coin-balance token-balance">
+
+                        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20shape-rendering%3D%22crispEdges%22%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2210%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2280%22%20y%3D%2220%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2210%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2280%22%20y%3D%2230%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2210%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2280%22%20y%3D%2240%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2210%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2280%22%20y%3D%2250%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2210%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2280%22%20y%3D%2260%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2210%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2280%22%20y%3D%2270%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2220%22%20y%3D%2280%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2280%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2280%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2280%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2280%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23FFD700%22%20%2F%3E%20%20%3Crect%20x%3D%2270%22%20y%3D%2280%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2230%22%20y%3D%2290%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2240%22%20y%3D%2290%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2250%22%20y%3D%2290%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Crect%20x%3D%2260%22%20y%3D%2290%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23DAA520%22%20%2F%3E%20%20%3Cg%20transform%3D%22rotate(-45%2050%2050)%22%3E%20%20%20%20%3Crect%20x%3D%2224%22%20y%3D%2242%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%23000000%22%20%2F%3E%20%20%20%20%3Crect%20x%3D%2240%22%20y%3D%2238%22%20width%3D%2236%22%20height%3D%2224%22%20fill%3D%22%23000000%22%20%2F%3E%20%20%3C%2Fg%3E%3C%2Fsvg%3E" alt="Tokens" draggable="false" style="user-select: none; -webkit-user-drag: none; pointer-events: none;">
+                        <span id="unlockables-token-display">0</span>
+                    
+                        </div>
                     </div>
                     <button id="close-unlockables">CLOSE</button>
                 </div>
@@ -362,52 +411,101 @@
                         <!-- Rows injected via JS -->
                     </div>
 
-                    <!-- Daily Section (Hidden by default) -->
-                    <div id="daily-section"
-                        style="display: none; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
-                        <!-- Daily Play Button -->
-                        <div class="daily-divider">TODAY'S TOP SCORES</div>
-                        <!-- Placeholder for Daily Scores -->
-                        <div id="daily-list"
-                            style="text-align: center; color: #666; margin-top: 2vmin; margin-bottom: 2vmin; min-height: 0; flex: 1; overflow-y: auto;">
-                            COMING SOON...
-                        </div>
-
-                        <!-- Daily Hero Card -->
+                        <!-- Daily Section (Hidden by default) -->
+                        <div id="daily-section"
+                            style="display: none; flex-direction: column; width: 100%; height: 100%; overflow-y: auto;">
+                            
+                            <!-- Daily Hero Card -->
                         <div class="daily-hero-card">
                             <div class="daily-header">
                                 <span class="daily-title">DAILY CHALLENGE</span>
-                                <div class="daily-date-nav">
-                                    <div id="daily-prev-btn" class="nav-arrow">&lt;</div>
-                                    <span id="daily-date" class="daily-date">--/--</span>
-                                    <div id="daily-next-btn" class="nav-arrow">&gt;</div>
-                                </div>
                             </div>
                             <p class="daily-desc">Survive today's chaotic pitch sequence!</p>
 
-                            <div class="daily-stats-row">
-                                <div class="stat-box">
-                                    <div class="stat-label">YOUR STREAK</div>
-                                    <div id="daily-streak-container" class="stat-value">
-                                        <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='%23ff5500'%20stroke='%23ff5500'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3e%3cpath%20d='M8.5%2014.5A2.5%202.5%200%200%200%2011%2012c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054%202-6%20.5%202.5%202%204.9%204%206.5%202%201.6%203%203.5%203%205.5a7%207%200%201%201-14%200c0-1.1.2-2.2.6-3.3.3.9.9%201.8%202.9%202.8z'/%3e%3c/svg%3e" alt="Streak" class="streak-icon"
-                                            style="width: 1em; height: 1em; vertical-align: middle; margin-right: 4px;">
-                                        <span id="daily-streak-value">0</span>
+                            <div class="daily-content-wrapper">
+                                <!-- 2x3 Grid for Days 1-6 -->
+                                <div id="daily-calendar-grid" class="daily-grid-container">
+                                    <div class="cal-day coin-day" data-day="1">
+                                        <div class="cal-day-header">DAY 1</div>
+                                        <div class="cal-content-area">
+                                            <img class="cal-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2010%2010'%20shape-rendering='crispEdges'%3e%3c!--%20Row%201%20--%3e%3crect%20x='3'%20y='0'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%202%20--%3e%3crect%20x='2'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='1'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%203%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='2'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='2'%20width='2'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='5'%20y='2'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%204%20(Symbol%20Top)%20--%3e%3crect%20x='1'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='4'%20y='3'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%205%20(Symbol%20Middle%201)%20--%3e%3crect%20x='1'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='4'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='4'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%206%20(Symbol%20Middle%202)%20--%3e%3crect%20x='1'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='5'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='5'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='5'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%207%20(Symbol%20Bottom)%20--%3e%3crect%20x='1'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='6'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='6'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='6'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%208%20--%3e%3crect%20x='1'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='7'%20width='6'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%209%20--%3e%3crect%20x='2'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='8'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%2010%20--%3e%3crect%20x='3'%20y='9'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c/svg%3e" alt="coins">
+                                        </div>
+                                        <div class="cal-status">
+                                            <span class="cal-amount">10</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-day coin-day" data-day="2">
+                                        <div class="cal-day-header">DAY 2</div>
+                                        <div class="cal-content-area">
+                                            <img class="cal-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2010%2010'%20shape-rendering='crispEdges'%3e%3c!--%20Row%201%20--%3e%3crect%20x='3'%20y='0'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%202%20--%3e%3crect%20x='2'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='1'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%203%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='2'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='2'%20width='2'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='5'%20y='2'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%204%20(Symbol%20Top)%20--%3e%3crect%20x='1'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='4'%20y='3'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%205%20(Symbol%20Middle%201)%20--%3e%3crect%20x='1'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='4'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='4'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%206%20(Symbol%20Middle%202)%20--%3e%3crect%20x='1'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='5'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='5'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='5'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%207%20(Symbol%20Bottom)%20--%3e%3crect%20x='1'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='6'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='6'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='6'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%208%20--%3e%3crect%20x='1'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='7'%20width='6'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%209%20--%3e%3crect%20x='2'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='8'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%2010%20--%3e%3crect%20x='3'%20y='9'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c/svg%3e" alt="coins">
+                                        </div>
+                                        <div class="cal-status">
+                                            <span class="cal-amount">15</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-day coin-day" data-day="3">
+                                        <div class="cal-day-header">DAY 3</div>
+                                        <div class="cal-content-area">
+                                            <img class="cal-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2010%2010'%20shape-rendering='crispEdges'%3e%3c!--%20Row%201%20--%3e%3crect%20x='3'%20y='0'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%202%20--%3e%3crect%20x='2'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='1'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%203%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='2'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='2'%20width='2'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='5'%20y='2'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%204%20(Symbol%20Top)%20--%3e%3crect%20x='1'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='4'%20y='3'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%205%20(Symbol%20Middle%201)%20--%3e%3crect%20x='1'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='4'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='4'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%206%20(Symbol%20Middle%202)%20--%3e%3crect%20x='1'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='5'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='5'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='5'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%207%20(Symbol%20Bottom)%20--%3e%3crect%20x='1'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='6'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='6'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='6'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%208%20--%3e%3crect%20x='1'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='7'%20width='6'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%209%20--%3e%3crect%20x='2'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='8'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%2010%20--%3e%3crect%20x='3'%20y='9'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c/svg%3e" alt="coins">
+                                        </div>
+                                        <div class="cal-status">
+                                            <span class="cal-amount">20</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-day crate-day" data-day="4">
+                                        <div class="cal-day-header">DAY 4</div>
+                                        <div class="cal-content-area">
+                                            <img class="cal-icon cal-crate-icon" src="data:image/svg+xml,%3csvg%20width='64'%20height='64'%20viewBox='0%200%2016%2016'%20xmlns='http://www.w3.org/2000/svg'%20shape-rendering='crispEdges'%3e%3c!--%20Base%20Shadow%20--%3e%3crect%20x='1'%20y='2'%20width='14'%20height='13'%20fill='%233E2723'/%3e%3c!--%20Main%20Wood%20Body%20--%3e%3crect%20x='1'%20y='2'%20width='14'%20height='12'%20fill='%238D6E63'/%3e%3c!--%20Planks%20(darker%20lines)%20--%3e%3crect%20x='2'%20y='5'%20width='12'%20height='1'%20fill='%235D4037'/%3e%3crect%20x='2'%20y='9'%20width='12'%20height='1'%20fill='%235D4037'/%3e%3c!--%20Corners%20(Metal)%20--%3e%3crect%20x='1'%20y='2'%20width='3'%20height='3'%20fill='%23BCAAA4'/%3e%3crect%20x='12'%20y='2'%20width='3'%20height='3'%20fill='%23BCAAA4'/%3e%3crect%20x='1'%20y='11'%20width='3'%20height='3'%20fill='%23BCAAA4'/%3e%3crect%20x='12'%20y='11'%20width='3'%20height='3'%20fill='%23BCAAA4'/%3e%3c!--%20Center%20Emblem%20(Diamond)%20--%3e%3crect%20x='6'%20y='6'%20width='4'%20height='4'%20fill='%23EFEBE9'/%3e%3crect%20x='7'%20y='7'%20width='2'%20height='2'%20fill='%23D32F2F'/%3e%3c!--%20Highlight%20Top%20Edge%20--%3e%3crect%20x='1'%20y='2'%20width='14'%20height='1'%20fill='%23D7CCC8'%20opacity='0.5'/%3e%3c/svg%3e" alt="crate">
+                                        </div>
+                                        <div class="cal-status">
+                                            <span class="cal-amount">CRATE</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-day coin-day" data-day="5">
+                                        <div class="cal-day-header">DAY 5</div>
+                                        <div class="cal-content-area">
+                                            <img class="cal-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2010%2010'%20shape-rendering='crispEdges'%3e%3c!--%20Row%201%20--%3e%3crect%20x='3'%20y='0'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%202%20--%3e%3crect%20x='2'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='1'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%203%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='2'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='2'%20width='2'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='5'%20y='2'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%204%20(Symbol%20Top)%20--%3e%3crect%20x='1'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='4'%20y='3'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%205%20(Symbol%20Middle%201)%20--%3e%3crect%20x='1'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='4'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='4'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%206%20(Symbol%20Middle%202)%20--%3e%3crect%20x='1'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='5'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='5'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='5'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%207%20(Symbol%20Bottom)%20--%3e%3crect%20x='1'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='6'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='6'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='6'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%208%20--%3e%3crect%20x='1'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='7'%20width='6'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%209%20--%3e%3crect%20x='2'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='8'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%2010%20--%3e%3crect%20x='3'%20y='9'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c/svg%3e" alt="coins">
+                                        </div>
+                                        <div class="cal-status">
+                                            <span class="cal-amount">25</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-day coin-day" data-day="6">
+                                        <div class="cal-day-header">DAY 6</div>
+                                        <div class="cal-content-area">
+                                            <img class="cal-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2010%2010'%20shape-rendering='crispEdges'%3e%3c!--%20Row%201%20--%3e%3crect%20x='3'%20y='0'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%202%20--%3e%3crect%20x='2'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='1'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%203%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='2'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='2'%20width='2'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='5'%20y='2'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%204%20(Symbol%20Top)%20--%3e%3crect%20x='1'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='4'%20y='3'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%205%20(Symbol%20Middle%201)%20--%3e%3crect%20x='1'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='4'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='4'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%206%20(Symbol%20Middle%202)%20--%3e%3crect%20x='1'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='5'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='5'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='5'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%207%20(Symbol%20Bottom)%20--%3e%3crect%20x='1'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='6'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='6'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='6'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%208%20--%3e%3crect%20x='1'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='7'%20width='6'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%209%20--%3e%3crect%20x='2'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='8'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%2010%20--%3e%3crect%20x='3'%20y='9'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c/svg%3e" alt="coins">
+                                        </div>
+                                        <div class="cal-status">
+                                            <span class="cal-amount">30</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="stat-box">
-                                    <div class="stat-label">ENTRY FEE</div>
-                                    <div id="daily-cost-container" class="stat-value free">
-                                        <img id="daily-cost-icon"
-                                            src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFFFFF%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23000000%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%221%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%228%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23FFD700%22%20%2F%3E%3Crect%20x%3D%227%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23DAA520%22%20%2F%3E%3C%2Fsvg%3E"
-                                            class="stat-icon" style="display: none;">
-                                        <span id="daily-cost-value">FREE</span>
+
+                                <!-- Day 7 Panel -->
+                                <div class="cal-day premium-day" data-day="7">
+                                    <div class="reward-header">DAY 7 REWARD</div>
+                                    <div class="reward-sub">ULTIMATE REWARD</div>
+                                    <img class="reward-crate-img" src="data:image/svg+xml,%3csvg%20width='64'%20height='64'%20viewBox='0%200%2016%2016'%20xmlns='http://www.w3.org/2000/svg'%20shape-rendering='crispEdges'%3e%3c!--%20Base%20Shadow%20--%3e%3crect%20x='1'%20y='2'%20width='14'%20height='13'%20fill='%23263238'/%3e%3c!--%20Main%20Body%20(Dark%20Metal/Space)%20--%3e%3crect%20x='1'%20y='2'%20width='14'%20height='12'%20fill='%23455A64'/%3e%3c!--%20Gold%20Accents/Frame%20--%3e%3crect%20x='1'%20y='2'%20width='14'%20height='1'%20fill='%23FFC107'/%3e%3c!--%20Top%20--%3e%3crect%20x='1'%20y='13'%20width='14'%20height='1'%20fill='%23FFC107'/%3e%3c!--%20Bottom%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='12'%20fill='%23FFC107'/%3e%3c!--%20Left%20--%3e%3crect%20x='14'%20y='2'%20width='1'%20height='12'%20fill='%23FFC107'/%3e%3c!--%20Right%20--%3e%3c!--%20Purple%20Energy%20Core%20--%3e%3crect%20x='3'%20y='4'%20width='10'%20height='8'%20fill='%23311B92'/%3e%3c!--%20Glowing%20Pulse%20(Cyan)%20--%3e%3crect%20x='5'%20y='6'%20width='6'%20height='4'%20fill='%2300E5FF'/%3e%3crect%20x='6'%20y='7'%20width='4'%20height='2'%20fill='%23E0F7FA'/%3e%3c!--%20Corner%20Reinforcements%20--%3e%3crect%20x='1'%20y='2'%20width='2'%20height='2'%20fill='%23FFA000'/%3e%3crect%20x='13'%20y='2'%20width='2'%20height='2'%20fill='%23FFA000'/%3e%3crect%20x='1'%20y='12'%20width='2'%20height='2'%20fill='%23FFA000'/%3e%3crect%20x='13'%20y='12'%20width='2'%20height='2'%20fill='%23FFA000'/%3e%3c!--%20Shimmer%20Overlay%20--%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20opacity='0.8'/%3e%3crect%20x='12'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20opacity='0.6'/%3e%3c/svg%3e" alt="premium crate">
+                                    <div class="cal-status" id="day7-status">
+                                        <!-- Dynamically updated -->
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <button id="daily-challenge-btn" class="daily-play-action">
-                                START RUN
-                            </button>
+                        <!-- Date Navigation -->
+                        <div class="daily-date-nav" style="margin-top: 2vmin; justify-content: center;">
+                            <div id="daily-prev-btn" class="nav-arrow">&lt;</div>
+                            <span id="daily-date" class="daily-date">--/--</span>
+                            <div id="daily-next-btn" class="nav-arrow">&gt;</div>
+                        </div>
+
+                        <!-- Daily Play Button Divider -->
+                        <div class="daily-divider" style="display: none;">TODAY'S TOP SCORES</div>
+                        <!-- Placeholder for Daily Scores -->
+                        <div id="daily-list"
+                            style="display: none; text-align: center; color: #666; margin-top: 2vmin; margin-bottom: 2vmin;">
+                            COMING SOON...
                         </div>
                     </div>
 
@@ -421,18 +519,32 @@
                         <button id="submit-name-btn"
                             style="background: #f1c40f; color: black; border: none; padding: 1.5vmin 3vmin; font-family: 'PressStart2PLocal'; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 0 #c2a71f;">SAVE</button>
                     </div>
+
+                    <!-- Pagination Controls -->
+                    <div id="leaderboard-pagination" style="display: none;">
+                        <button id="pagination-prev" class="pagination-btn">&lt;</button>
+                        <span id="pagination-text">PAGE 1</span>
+                        <button id="pagination-next" class="pagination-btn">&gt;</button>
+                    </div>
                 </div>
 
-
-
-                <div class="leaderboard-footer">
-
-
-                    <div class="personal-best-container">
-                        <span>YOUR BEST</span>
-                        <span id="personal-best-display">0</span>
+                <div class="leaderboard-footer" id="leaderboard-footer">
+                    <!-- Daily Only UI (Toggled via JS) -->
+                    <div id="daily-cost-container" class="daily-entry-fee free" style="display: none;">
+                        <span class="entry-fee-label">ENTRY:</span>
+                        <img id="daily-cost-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2010%2010'%20shape-rendering='crispEdges'%3e%3c!--%20Row%201%20--%3e%3crect%20x='3'%20y='0'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%202%20--%3e%3crect%20x='2'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='1'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='1'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%203%20--%3e%3crect%20x='1'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='2'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='2'%20width='2'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='5'%20y='2'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='2'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%204%20(Symbol%20Top)%20--%3e%3crect%20x='1'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='3'%20y='3'%20width='1'%20height='1'%20fill='%23FFFFFF'%20/%3e%3crect%20x='4'%20y='3'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='3'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='3'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%205%20(Symbol%20Middle%201)%20--%3e%3crect%20x='1'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='4'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='4'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='4'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%206%20(Symbol%20Middle%202)%20--%3e%3crect%20x='1'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='5'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='5'%20width='1'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='5'%20y='5'%20width='3'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='5'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%207%20(Symbol%20Bottom)%20--%3e%3crect%20x='1'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='6'%20width='2'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='4'%20y='6'%20width='3'%20height='1'%20fill='%23000000'%20/%3e%3crect%20x='7'%20y='6'%20width='1'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='6'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%208%20--%3e%3crect%20x='1'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='2'%20y='7'%20width='6'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='8'%20y='7'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%209%20--%3e%3crect%20x='2'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3crect%20x='3'%20y='8'%20width='4'%20height='1'%20fill='%23FFD700'%20/%3e%3crect%20x='7'%20y='8'%20width='1'%20height='1'%20fill='%23DAA520'%20/%3e%3c!--%20Row%2010%20--%3e%3crect%20x='3'%20y='9'%20width='4'%20height='1'%20fill='%23DAA520'%20/%3e%3c/svg%3e" class="entry-fee-coin" style="display: none;">
+                        <span id="daily-cost-value" class="entry-fee-value">FREE</span>
                     </div>
-                    <button id="close-leaderboard">CLOSE</button>
+                    <button id="daily-challenge-btn" class="daily-play-action" style="display: none;">
+                        START RUN
+                    </button>
+
+                    <!-- Both Tabs UI -->
+                    <div class="personal-best-container" id="footer-personal-best">
+                        <span>YOUR BEST</span>
+                        <span id="personal-best-display" class="highlight">0</span>
+                    </div>
+                    <button id="close-leaderboard" class="settings-action-btn">CLOSE</button>
                 </div>
             </div>
         </div>
@@ -480,6 +592,8 @@
                 <button id="security-close-btn">OKAY</button>
             </div>
         </div>
+
+
 
         <!-- Challenges Modal -->
         <div id="challenges-modal" style="display: none;">
